@@ -1,0 +1,58 @@
+### Get all customers
+GET http://localhost:8081/customers
+
+
+### Create Customer
+POST http://localhost:8081/customers
+Content-Type: application/json
+
+{
+    "firstName": "ahmed",
+    "lastName": "khan",
+    "email": "ahmed123@test.com"
+}
+
+
+### Create addresses
+POST http://localhost:8081/customers/044cf9fd-ecad-41a2-80fe-675bc234067a/addresses
+Content-Type: application/json
+
+{
+  "street": "kotli",
+  "city": "pakistan",
+  "postalCode": "11125",
+  "country": "PK"
+}
+
+### Get address and customerId
+GET http://localhost:8081/customers/044cf9fd-ecad-41a2-80fe-675bc234067a/addresses/99936eb0-1cff-4063-95d2-dd8f4ec85be8
+
+
+### Create Order
+POST http://localhost:8082/orders
+Content-Type: application/json
+Idempotency-Key: 550e8400-e29b-41d4-a716-446655111111
+
+{
+  "customerId": "044cf9fd-ecad-41a2-80fe-675bc234067a",
+  "addressId": "99936eb0-1cff-4063-95d2-dd8f4ec85be8",
+  "items": [
+    {
+      "productId": "7858c241-1191-4963-8d07-28564177d452",
+      "productName": "monitor",
+      "quantity": 1,
+      "unitPrice": 10.00
+    }
+  ]
+}
+
+### Get all orders
+GET http://localhost:8082/orders
+
+### Change status 
+PATCH http://localhost:8082/orders/a0bbcaff-e980-4ee4-9a22-9492d99932a4/status
+Content-Type: application/json
+
+{
+  "status": "SHIPPED"
+}
