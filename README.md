@@ -1,5 +1,4 @@
-# Microservices E-Commerce Backend
-
+# Microservices Kafka & API First
 A Java Spring Boot microservices project demonstrating a scalable backend architecture using Spring Cloud, Docker, Apache Kafka, PostgreSQL, and Eureka Service Discovery.
 
 ## Project Overview
@@ -35,77 +34,20 @@ asynchronous messaging, and service discovery.
          |                              +-------------------------+
 
                     PostgreSQL Database
-## Technologies Used
-- Java 17
-- Spring Boot 4
-- Spring Cloud Netflix Eureka
-- Spring Data JPA
-- PostgreSQL
-- Apache Kafka
+```
+---
+
+## Services
+- Customer Service — owns customer and address data. Exposes REST endpoints for other services to consume.
+- Order Service — accepts orders, validates the customer/address synchronously via Feign + Eureka, and publishes order lifecycle events to Kafka.
+- Notification Service — Kafka consumer only, no exposed REST API. Reacts to order events idempotently.
+- Eureka Server — service discovery registry; services locate each other by logical name, not hardcoded URLs.
+- Each service follows Hexagonal Architecture: domain → application (ports & use cases) → infrastructure (REST controllers, JPA adapters, Kafka producers/consumers).
+---
+### Running the Project
 - Docker & Docker Compose
-- OpenAPI Generator
-- SpringDoc OpenAPI (Swagger)
-- MapStruct
-- Lombok
-- Maven
-
----
-
-## Microservices
-
-### Customer Service
-
-Responsible for:
-
-- Creating customers
-- Retrieving customer information
-- Managing customer addresses
-
-### Order Service
-
-Responsible for:
-
-- Creating orders
-- Validating customer information
-- Processing order items
-- Publishing order events to Kafka
-- Idempotent order creation
-
-### Notification Service
-
-Responsible for:
-
-- Consuming Kafka order events
-- Processing asynchronous notifications
-
----
-
-### Eureka Server
-
-Responsible for:
-
-- Service registration
-- Service discovery
-
-## Features
-
-- Microservices Architecture
-- Service Discovery using Eureka
-- REST APIs
-- Dockerized Services
-- PostgreSQL Persistence
-- Kafka Event Publishing
-- Kafka Consumer
-- OpenAPI Generated APIs
-- Clean Architecture
-- DTO Mapping using MapStruct
-- Validation using Jakarta Validation
-- Idempotent Order Creation
-
----
-
-## Running the Project
-
+- Java 21 (only needed if building/running a service outside Docker)
+  
 ### Clone Repository
 
 ```bash
@@ -142,20 +84,35 @@ You should see containers for:
 
 ---
 
-## Example OF API Requests ID GIVEN INSIDE EACH MICROSERVICE(Please check README file inside each service to run each service independently)
+## API Requests Endpoints
+- GIVEN INSIDE EACH MICROSERVICE(Please check README file inside each service to run each service independently and to check its end points)
+
 ---
 
 ## Project Structure
 
 ```
 Microservices/
-│
-├── customer-service/
-├── order-service/
-├── notification-service/
+├── docker-compose.yaml
+├── init.sql                     # creates the 3 schemas + per-service DB users
 ├── eureka-server/
-├── docker-compose.yml
-└── README.md
+├── customer_service/
+│   ├── openapi/customer-api.yaml
+│   └── src/main/java/com/demo/customer_service/
+│       ├── domain/
+│       ├── application/{port/in, port/out, usecase}/
+│       └── infrastructure/adapter/{in/web, out/persistence}/
+├── order_service/
+│   ├── openapi/order-api.yaml
+│   └── src/main/java/com/demo/order_service/
+│       ├── domain/
+│       ├── application/{port/in, port/out, usecase}/
+│       └── infrastructure/adapter/{in/web, out/persistence, out/rest}/
+└── notification_service/
+    └── src/main/java/com/demo/notification_service/
+        ├── domain/
+        ├── application/{port/in, port/out, usecase}/
+        └── infrastructure/adapter/{out/persistence, out/messaging}/
 ```
 
 ---
@@ -165,11 +122,22 @@ Microservices/
 - API Gateway
 - Centralized Configuration Server
 - JWT Authentication
-- Distributed Tracing
-- Circuit Breaker (Resilience4j)
 - Monitoring with Prometheus & Grafana
-- CI/CD Pipeline
+- Unit tests for domain and use case layers
+- Integration tests for REST controllers and Kafka consumers
+- CI/CD Pipeline(GitHub Actions): build, test, and lint on every push
 - Kubernetes Deployment
+
+---
+## Tech Stack
+- Language / Framework: Java 21, Spring Boot
+- REST, OpenAPI 3.x (API First — spec generated into controller interfaces)
+- Apache Kafka (KRaft mode, no Zookeeper)
+- Netflix Eureka
+- OpenFeign + Spring Cloud LoadBalancer
+- PostgreSQL, one isolated schema per service, Spring Data JPA
+- Docker, Docker Compose
+
 
 ---
 ## Learning Objectives
@@ -179,7 +147,7 @@ This project was built to practice:
 - Service Discovery
 - Event-Driven Architecture
 - Kafka Messaging
-- Docker
+- Docker,Kubernetes
 - REST API Design
 - Clean Architecture
 - Domain-Driven Design Principles
