@@ -117,6 +117,17 @@ Microservices/
 
 ---
 
+## Tech Stack
+- Language / Framework: Java 21, Spring Boot
+- REST, OpenAPI 3.x (API First — spec generated into controller interfaces)
+- Apache Kafka (KRaft mode, no Zookeeper)
+- Netflix Eureka
+- OpenFeign + Spring Cloud LoadBalancer
+- PostgreSQL, one isolated schema per service, Spring Data JPA
+- Docker, Docker Compose
+  
+---
+
 ## Future Improvements
 
 - API Gateway
@@ -127,17 +138,6 @@ Microservices/
 - Integration tests for REST controllers and Kafka consumers
 - CI/CD Pipeline(GitHub Actions): build, test, and lint on every push
 - Kubernetes Deployment
-
----
-## Tech Stack
-- Language / Framework: Java 21, Spring Boot
-- REST, OpenAPI 3.x (API First — spec generated into controller interfaces)
-- Apache Kafka (KRaft mode, no Zookeeper)
-- Netflix Eureka
-- OpenFeign + Spring Cloud LoadBalancer
-- PostgreSQL, one isolated schema per service, Spring Data JPA
-- Docker, Docker Compose
-
 
 ---
 ## Learning Objectives
