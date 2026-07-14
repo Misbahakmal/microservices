@@ -42,10 +42,10 @@ class CustomerControllerIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
 
-    @DynamicPropertySource
-    static void overrideProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-    }
+   @DynamicPropertySource
+static void overrideProps(DynamicPropertyRegistry registry) {
+    registry.add("spring.jpa.properties.hibernate.default_schema", () -> "public");
+}
 
     @Autowired
     private MockMvc mockMvc;
