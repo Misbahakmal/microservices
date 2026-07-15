@@ -28,6 +28,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("ci")
 class CustomerControllerIntegrationTest {
 
+    // NOTE: for test simplicity this uses the default "public" schema
+    // instead of "customer_schema" + a dedicated app user, unlike the real
+    // docker-compose setup. That schema/user separation is a production
+    // concern (least-privilege DB access) - it doesn't need to be
+    // re-created for a throwaway test container that's destroyed after
+    // every run.
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
+
+   @DynamicPropertySource
+static void overrideProps(DynamicPropertyRegistry registry) {
+    registry.add("spring.jpa.properties.hibernate.default_schema", () -> "public");
+}
+
     @Autowired
     private MockMvc mockMvc;
 
