@@ -24,8 +24,8 @@ jobs:
       # Step 1: start the real infrastructure FIRST, using the same
       # docker-compose.yaml and init.sql that you use locally - no
       # duplicated config, no Testcontainers library involved at all.
-      - name: Start Postgres and Eureka Server
-        run: docker compose up -d postgres eureka-server
+      - name: Start Postgres
+        run: docker compose up -d postgres
 
       # Step 2: wait until Postgres is actually ready to accept
       # connections before Maven tries to use it - "docker compose up -d"
@@ -42,20 +42,6 @@ jobs:
             sleep 2
           done
           echo "Postgres did not become ready in time"
-          exit 1
-
-      # Step 3: same check for Eureka Server's health endpoint.
-      - name: Wait for Eureka Server to be ready
-        run: |
-          for i in {1..30}; do
-            if curl -sf http://localhost:8761/actuator/health > /dev/null 2>&1; then
-              echo "Eureka Server is ready"
-              exit 0
-            fi
-            echo "Waiting for Eureka Server... ($i/30)"
-            sleep 2
-          done
-          echo "Eureka Server did not become ready in time"
           exit 1
 
       - name: Set up JDK 21
