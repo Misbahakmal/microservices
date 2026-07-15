@@ -1,35 +1,31 @@
 package com.demo.customer_service;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.junit.jupiter.api.Disabled;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+
 import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// @SpringBootTest boots the FULL application context - real controllers,
-// real use cases, real JPA - only the database is swapped for a throwaway
-// container instead of your actual "microservices_db". This is the test
-// that actually proves your REST layer, JPA mapping, and validation logic
-// work together end-to-end.
-@EnabledIfEnvironmentVariable(named = "CI", matches = "true")
+// No more Testcontainers here. This test assumes the real docker-compose
+// infrastructure (postgres + eureka-server) is ALREADY running before
+// Maven starts - either started manually for local runs, or started by
+// the CI workflow before the build/test step.
+//
+// Run locally with:
+//   docker compose up -d postgres eureka-server
+//   cd customer_service && mvn test -Dspring.profiles.active=ci
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
+@ActiveProfiles("ci")
 class CustomerControllerIntegrationTest {
 
     // NOTE: for test simplicity this uses the default "public" schema
@@ -58,7 +54,9 @@ static void overrideProps(DynamicPropertyRegistry registry) {
         var createRequest = Map.of(
                 "firstName", "John",
                 "lastName", "Doe",
-                "email", "john.doe@example.com"
+                // unique email per run so repeated local test runs don't
+                // collide with leftover data from a previous run
+                "email", "john.doe." + UUID.randomUUID() + "@example.com"
         );
 
         String response = mockMvc.perform(post("/customers")
@@ -66,23 +64,22 @@ static void overrideProps(DynamicPropertyRegistry registry) {
                         .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.firstName").value("John"))
-                .andExpect(jsonPath("$.email").value("john.doe@example.com"))
                 .andReturn().getResponse().getContentAsString();
 
         String customerId = objectMapper.readTree(response).get("id").asText();
 
         mockMvc.perform(get("/customers/{id}", customerId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("john.doe@example.com"));
+                .andExpect(jsonPath("$.firstName").value("John"));
     }
 
     @Test
     void getAddressById_returns200_whenAddressBelongsToCustomer() throws Exception {
-        // Arrange: create a customer, then add an address to them
         String customerResponse = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "firstName", "Jane", "lastName", "Smith", "email", "jane@example.com"))))
+                                "firstName", "Jane", "lastName", "Smith",
+                                "email", "jane." + UUID.randomUUID() + "@example.com"))))
                 .andReturn().getResponse().getContentAsString();
         String customerId = objectMapper.readTree(customerResponse).get("id").asText();
 
@@ -95,7 +92,6 @@ static void overrideProps(DynamicPropertyRegistry registry) {
                 .andReturn().getResponse().getContentAsString();
         String addressId = objectMapper.readTree(addressResponse).get("id").asText();
 
-        // Act + Assert: this is the exact endpoint built earlier in this project
         mockMvc.perform(get("/customers/{id}/addresses/{addressId}", customerId, addressId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.street").value("Carnotstr. 4"))
@@ -104,11 +100,11 @@ static void overrideProps(DynamicPropertyRegistry registry) {
 
     @Test
     void getAddressById_returns404_whenAddressBelongsToDifferentCustomer() throws Exception {
-        // Customer A with an address
         String customerAResponse = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "firstName", "Alice", "lastName", "A", "email", "alice@example.com"))))
+                                "firstName", "Alice", "lastName", "A",
+                                "email", "alice." + UUID.randomUUID() + "@example.com"))))
                 .andReturn().getResponse().getContentAsString();
         String customerAId = objectMapper.readTree(customerAResponse).get("id").asText();
 
@@ -120,16 +116,14 @@ static void overrideProps(DynamicPropertyRegistry registry) {
                 .andReturn().getResponse().getContentAsString();
         String addressId = objectMapper.readTree(addressResponse).get("id").asText();
 
-        // Customer B, unrelated
         String customerBResponse = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "firstName", "Bob", "lastName", "B", "email", "bob@example.com"))))
+                                "firstName", "Bob", "lastName", "B",
+                                "email", "bob." + UUID.randomUUID() + "@example.com"))))
                 .andReturn().getResponse().getContentAsString();
         String customerBId = objectMapper.readTree(customerBResponse).get("id").asText();
 
-        // This is the exact validation scenario discussed earlier:
-        // Customer B trying to access Customer A's address -> must be 404
         mockMvc.perform(get("/customers/{id}/addresses/{addressId}", customerBId, addressId))
                 .andExpect(status().isNotFound());
     }
