@@ -33,15 +33,7 @@ class CustomerControllerIntegrationTest {
     // docker-compose setup. That schema/user separation is a production
     // concern (least-privilege DB access) - it doesn't need to be
     // re-created for a throwaway test container that's destroyed after
-    // every run.
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
-
-   @DynamicPropertySource
-static void overrideProps(DynamicPropertyRegistry registry) {
-    registry.add("spring.jpa.properties.hibernate.default_schema", () -> "public");
-}
+    // every run
 
     @Autowired
     private MockMvc mockMvc;
